@@ -1,0 +1,45 @@
+ /* Last updated: September 8, 2020 by Hereman in Boulder */
+
+/* Data file s-NLS-run1-Sep8-2020.dat for the Nonlinear Schrodinger (NLS) equation. */
+
+/* Generating all the determining equations in one run (which could be a bit slow for large systems). */
+/* Took about 10 seconds on my 2012 Dell Latitude E6440 laptop */
+
+/* NLS equation : i u_t + u_xx + a*|u|^2 u = 0 */
+/* Set u = u[1] + i u[2], split in real and imaginary parts gives the system: */
+/*  u[1]_t + u[2]_xx + a*(u[1]^2+u[2]^2) u[2] = 0, */
+/*  u[2]_t - u[1]_xx - a*(u[1]^2+u[2]^2) u[1] = 0. */
+/* Assign x[1] to x, x[2] to t, a is a real parameter to capture the focusing and defocusing NLS eqs. */
+ 
+/* number of independent variables: */
+p : 2 $
+
+/* number of dependent variables: */
+q : 2 $
+
+/* number of equations in the system: */
+m : 2 $
+
+parameters:[a]$
+sublisteqs:[all]$
+subst_deriv_of_vi:true$
+highest_derivatives:all$
+warnings:true$
+
+/* information is given this time. */
+info_given : true$
+
+depends([eta1,f1,f2,f3,f4,f5,f6],[x[1],x[2]]);
+depends(eta2,x[2]);
+
+phi1: f1*u[1]+f2*u[2]+f3; 
+phi2: f4*u[1]+f5*u[2]+f6; 
+
+e1 : u[1,[0,1]]+a*(u[1]^2+u[2]^2)*u[2]+u[2,[2,0]];
+e2 : u[2,[0,1]]-a*(u[1]^2+u[2]^2)*u[1]-u[1,[2,0]];
+
+v1 : u[1,[0,1]];
+v2 : u[2,[0,1]];
+
+/* end of command file s-NLS-run1-Sep8-2020.dat */
+

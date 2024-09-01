@@ -1,0 +1,67 @@
+/* Last updated: December 19, 2020 by Hereman in Boulder */
+/* For use with symmgrp2020.max under Maxima */
+
+/* File name: Fokker-Planck-Kolmogorov-run3-xk-genk-runa-Dec19-2020-wh.dat. */
+/* Data file for the Fokker-Planck-Kolmogorov equation with varying coefficient given in the online manuscript Faruk Gungor. */
+
+/* CASE: pp(x) = x^k, subcase genk where k is not in set {-2, -2/3, 1} */
+
+/* The info below is based on the determining equations obtained in Run 2 */
+
+/* u_t - u_xx + pp(x) u_y = 0 */
+/* Assign u[1] to u, x[1] to x, x[2] to y, and x[3] to t, pp is a function of x only. */
+
+/* number of independent variables: */
+p : 3$
+
+/* number of dependent variables: */
+q : 1$
+
+/* number of equations in the system: */
+m : 1$
+
+warnings: false$
+parameters : []$
+sublisteqs : [all]$
+subst_deriv_of_vi: true$
+highest_derivatives : all$
+
+/* information is give in this run. */
+info_given : true$
+
+/* careful the symbol p is reserved for the number of independent variables. So, use pp. */
+depends(pp,x[1]);
+
+pp : x[1]^k;
+
+depends([eta1,f1,f2],[x[1],x[2],x[3]]);
+/* depends([eta2,eta3],[x[2],x[3]]); */
+
+depends(eta2,x[2]);
+depends(eta3,x[3]);
+
+/* gradef(eta2,x[2],(1/2)*(k+2)*diff(eta3,x[3])); */
+
+eta2 : (1/2)*(k+2)*c4*x[2]+c5;
+eta3 : c4*x[3] + c6; 
+
+/* f2 satisfies the Fokker-Planck-Kolmogorov equation itself -- determining an infinite symmetry */
+gradef(f2,x[3],-pp*diff(f2,x[2])+diff(f2,x[1],2));
+
+/* This is based on the results of Run 2. We are using: */
+eta1 : -(pp^2/diff(pp,x[1]))*diff(eta3,x[2])-(pp/diff(pp,x[1]))*(diff(eta3,x[3])-diff(eta2,x[2]))+(1/diff(pp,x[1]))*diff(eta2,x[3]);
+
+/* For the generic case, i.e., valid for any function pp(x) : */
+/* eta1 : 0; */
+/* eta2 : c2; */
+/* eta3 : c1; */
+/* f1 : c3; */
+
+phi1 : f1*u[1]+f2;
+
+e1 : u[1,[0,0,1]] - u[1,[2,0,0]] + pp*u[1,[0,1,0]];
+/* pp is function of x only */
+v1 : u[1,[0,0,1]];
+
+/* end of data file Fokker-Planck-Kolmogorov-run3-xk-genk-runa-Dec19-2020-wh.dat. */
+

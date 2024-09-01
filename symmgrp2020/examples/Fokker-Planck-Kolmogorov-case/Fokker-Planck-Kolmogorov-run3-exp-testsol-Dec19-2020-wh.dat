@@ -1,0 +1,87 @@
+/* Last updated: December 19, 2020 by Hereman in Boulder */
+/* For use with symmgrp2020.max under Maxima */
+
+/* File name: Fokker-Planck-Kolmogorov-run3-exp-testsol-Dec19-2020-wh.dat. */
+/* Data file for the Fokker-Planck-Kolmogorov equation with varying coefficient given in the online manuscript Faruk Gungor. */
+
+/* CASE: pp(x) = exp(x) */
+/* The info below is based on the determining equations obtained in Run 2 */
+
+/* u_t - u_xx + pp(x) u_y = 0 */
+/* Assign u[1] to u, x[1] to x, x[2] to y, and x[3] to t, pp is a function of x only. */
+
+/* number of independent variables: */
+p : 3$
+
+/* number of dependent variables: */
+q : 1$
+
+/* number of equations in the system: */
+m : 1$
+
+warnings: false$
+parameters : []$
+sublisteqs : [all]$
+subst_deriv_of_vi: true$
+highest_derivatives : all$
+
+/* information is give in this run. */
+info_given : true$
+
+/* careful the symbol p is reserved for the number of independent variables. So, use pp. */
+
+depends(pp,x[1]);
+
+pp : exp(x[1]);
+
+depends([eta1,f1,f2],[x[1],x[2],x[3]]);
+depends([eta2,eta3],[x[2],x[3]]);
+
+/* depends(hh1,x[2]); */
+/* depends(ii1,[x[2],x[3]]); */
+
+/* f2 satisfies the Fokker-Planck-Kolmogorov equation itself -- determining an infinite symmetry */
+/* gradef(f2,x[3],-pp*diff(f2,x[2])+diff(f2,x[1],2)); */
+
+/* Take it out again to see the constraint on f1 explicitly. */
+/* gradef(f1,x[3],-pp*diff(f1,x[2])+diff(f1,x[1],2)); */
+
+/* For the generic (or principal) case: Taking the determining equations from Run 1, we split by powers of pp */
+/* and set the coefficients of derivatives also equal to zero. */
+/* We solved this by hand. We just test the result here. */
+/* For the generic case, i.e., valid for any function pp(x) : */
+/* eta1 : 0; */
+/* eta2 : c2; */
+/* eta3 : c1; */
+/* f1 : c3; */
+
+/* hh1 : ccc2*x[2]+ccc3; */
+/* ii1 : ccc4; */
+
+eta1 : ccc2 + 2*ccc5*x[2];
+
+eta2 : ccc2*x[2] + ccc3 + ccc5*x[2]^2;
+
+eta3 : ccc1;
+
+phi1 : ( ccc4-ccc5*(exp(x[1])+x[2]) )*u[1] + f2;
+
+/* f1 : -(1/2)*x[1]*diff(hh1,x[2],2)+ii1; */
+
+/* This is based on the results of Run 2. We are using it this time: */
+/* eta1 : -(pp^2/diff(pp,x[1]))*diff(eta3,x[2])-(pp/diff(pp,x[1]))*(diff(eta3,x[3])-diff(eta2,x[2]))+(1/diff(pp,x[1]))*diff(eta2,x[3])+2*ccc5*x[2]; */
+
+/* phi1 : ( f1 - ccc5*(exp(x[1])+x[2]) )*u[1]+f2; */
+
+e1 : u[1,[0,0,1]] - u[1,[2,0,0]] + pp*u[1,[0,1,0]];
+/* pp is function of x only */
+
+v1 : u[1,[0,0,1]]; 
+
+/* Running the code with either v1 = u[1,[0,0,1]] or v1 = u[1,[2,0,0] results in determining equations which are not completely split! */
+/* Needs TO BE INVESTIGATED */
+/* v1 : u[1,[2,0,0]]; */
+/* Current fix: Give gradef for f1 based on information from run1. */
+
+/* end of data file Fokker-Planck-Kolmogorov-run3-exp-testsol-Dec19-2020-wh.dat. */
+

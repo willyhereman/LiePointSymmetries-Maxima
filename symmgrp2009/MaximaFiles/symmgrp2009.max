@@ -1,0 +1,1143 @@
+/* symmgrp2010.max */
+/* Last updated: Wednesday, December 29, 2010 at 17:30              */
+/* Changes marked by WH December 27-29, 2010 at 16:00               */
+/* Suggested changes: Barton Willis -- December 27-29, 2010         */
+
+/* Program name: symmgrp2010.max based on symmgrp2009.max           */
+/*                                                                  */
+/* Previously updated: January 1, 2010 at 00:05 by Hereman          */
+/*                                                                  */ 
+/* Changes marked with 01/01/2010 WH:                               */
+/* Replaced the evaluation of mylength(exp) to 0 when exp is atom   */
+/* Reason: length(exp) in Macsyma returns 0 when exp is an atom     */
+/*                                                                  */
+/* Earlier update: November 28, 2009 at 00:45 by Hereman            */
+/* Based on code: June 12, 2006 at 22:25 by Hereman in Boulder      */
+/*                                                                  */
+/* To see changes made by Hereman: search for 02/23/2006 WH         */
+/* 06/13/2006 WH and 09/10/2009 WH                                  */
+/*                                                                  */
+/* Reasons for modifications made by Hereman:                       */
+/*                                                                  */
+/* 1. cancel factors like u[1]^2+u[2]^2+1 or u[2]*u[1]+1, etc.      */
+/*    and their powers for cp1, cp2, and cp3 project of Grundland.  */
+/* 2. remove duplicates in list with new remdupl function.          */
+/* 3. new function for sorting as list according to length          */
+/*    (the number of terms in a list).                              */
+/* 4. required a better way of computing the length of expressions. */
+/* 5. make code compatible with Maxima, public domain software      */
+/* 6. univeral comment when the code starts                         */
+/* 7. statement when code is running                                */
+/*                                                                  */
+/* To see the modifications made by Benoit Huard:                   */ 
+/* search for 18/02/2008 BH and 19/02/2008 BH (or 02/19/2008 BH)    */ 
+/*                                                                  */
+/* Changes made by Benoit Huard (Ph.D student of Pavel Winterniz)   */
+/*                                                                  */
+/* 1. Switched function names from upper to lowercase.              */
+/* 2. Variable ind replaced by myind (18/02/2008 BH).               */
+/* 3. Procedure mylength was included to rectify the behaviour      */
+/*    of the function length with atoms (19/02/2008 BH).            */
+/* 4. In the procedure searchcoeff: mac1, expr should be expanded   */
+/*    before executing hipower to get the right value               */
+/*    (19/02/2008 BH).                                              */
+
+/* print("Code symmgrp2009.max of November 28, 2009 is being loaded."); */
+/* print("Code symmgrp2009.max of Janurary 1, 2010 is being loaded."); */
+print("Code symmgrp2010.max of December 29, 2010 is being loaded."); 
+
+/* ********************************************************** */
+/*                                                            */
+/*           ***  M A C S Y M A    P R O G R A M  ***         */
+/*                                                            */
+/*                            AND                             */
+/*                                                            */
+/*            ***  M A X I M A    P R O G R A M  ***          */ 
+/*                                                            */
+/* Computer assisted calculation of the Lie point symmetries  */
+/* of systems of ordinary and partial differential equations  */
+/*                                                            */
+/*  Program name: symmgrp2010.max                             */
+/*  Purpose: find the determining equations needed to compute */
+/*           the symmetry group of a given system of systems  */
+/*           of ordinary and partial differential equations   */
+/*  Computers: tested on VAX-11/750 & 780,                    */
+/*             VAX-8600 and on VAX-2000, and                  */
+/*             various PCs with Windows XP and Vista          */
+/*  Versions of Macsyma: PC-Macsyma 417.125, 2.0 and 2.2      */
+/*  Versions of Maxima: 5.16.3 and higher                     */
+/*                                                            */
+/*  Language: Macsyma release 412,                            */
+/*            compatible with REX Macsyma 305                 */
+/*            and Macsyma 309                                 */
+/*                                                            */
+/*  Authors: B. Champagne, P. Winternitz, B. Huard            */
+/*           Centre de Recherches Mathematiques,              */
+/*           Universite de Montreal, Montreal, Quebec, Canada */
+/*                                                            */
+/*                            and                             */
+/*           W. Hereman,                                      */
+/*           Department of Mathematical and Computer Sciences */
+/*           Colorado School of Mines,                        */
+/*           Golden, CO 80401-1887, USA                       */
+/*                                                            */
+/*  Contact person: whereman@mines.edu                        */
+/*                                                            */
+/*  Version 3.2 released on December 29, 2010                 */
+/*  Version 3.1 released on January 1, 2010                   */
+/*  Updated: December 29, 2010 at 17:30 by Hereman in Boulder */
+/*  Updated: January 1, 2010 at 00:05 by Hereman in Boulder   */
+/*  Based on code: November 28, 2009 at 00:45 by Hereman      */
+/*                                                            */
+/* ********************************************************** */
+ 
+/**************************************************************/
+/*                                                            */
+/*  pattern matching functions and replacement rules.         */
+/*                                                            */
+/**************************************************************/
+
+removeduplicates:true$
+removeduplicatesmemory:false$
+sortlist:true$
+ 
+matchdeclare([i,l],integerp,j,listp)$
+ 
+defmatch(formu1,u[l,j])$
+logicformu1(x):=if formu1(x)=false then false else true$
+ 
+defrule(rule1,'diff(u[l],x[i]),u[l,j[i]])$
+defrule(rule2,'diff(u[l,j],x[i]),u[l,j+j[i]])$
+
+matchdeclare(varnum,scalarp,nonvarnum,true)$
+defmatch(forml1,varnum*nonvarnum)$
+ 
+freeofsum(expr):=freeof("+",expr)$
+notfreeofsum(expr):=not freeof("+",expr)$
+
+/**************************************************************/
+/*                                                            */
+/* undpar(exp) returns true if exp is an undetermined         */
+/* parameter. Determined parameters are either >0 or <0.      */
+/* the parameters in the list of parameters are set to be >0. */
+/* All x[i], u[l] are determined parameters and are set >0.   */
+/* Determined parameters are always free of sums.             */
+/*                                                            */
+/**************************************************************/
+
+undpar(exp):=block([flag,prederror:false],flag:false,
+   if nonscalarp(exp) then flag:true
+      else(if is(exp>0)=unknown then flag:true
+            else(if (is(exp>0)) then flag:false
+                 else(if (is(exp<0)) then flag:false))), flag)$
+
+/*  If expr is of the form p1^m with p1 a polynomial and m   */
+/*  a positive non-integer number, the function ratpowexp    */
+/*  returns (p1^m2)*(p1^m1) where m1+m2=m, 0<m2<1, and m1    */
+/*  is a positive integer.                                   */
+
+ratpowexp(expr):=block([exp:expr,m,m1,m2,p1,partswitch:true],
+  if part(exp,0)="^" then(
+    p1:part(exp,1),
+    if part(p1,0)="+" then(
+      m:part(exp,2),
+      if not integerp(m) and m>0 then(
+        m1:0,
+        if m>1 then while m>1 do(m1:m1+1,m:m-1),
+        m2:m,
+        exp:multthru(p1^m2,ratexpand(p1^m1))))),
+  return(exp))$
+ 
+/*************************************************************/
+/*                                                           */
+/*  provf(f) applies the k-th prolongation of the vector     */
+/*  field alfa to a function f depending on the variables    */
+/*  x[i] and u[l], and outputs the result.                   */
+/*                                                           */
+/*************************************************************/
+ 
+provf(f):=block([expr,l,list,j,test],
+  expr:sum(eta[i]*diff(f,x[i]),i,1,p) +
+       sum(phi[l]*diff(f,u[l]),l,1,q),
+  list:listofvars(f),
+  for var in list do
+    if formu1(var)#false then
+      expr:expr+'psi[l,j]*diff(f,u[l,j]) ,
+  expr)$
+ 
+/*************************************************************/
+/*                                                           */
+/*  totdf(i,f) applies the total derivative operator d[i]    */
+/*  to a function f depending on the variables x[i] and u[l],*/
+/*  and outputs the result.                                  */
+/*                                                           */
+/*************************************************************/
+ 
+totdf(i,f):=block([expr,l,list,j,test],
+  expr:diff(f,x[i])+sum(u[l,j[i]]*diff(f,u[l]),l,1,q),
+  list:listofvars(f),
+  for var in list do
+    if formu1(var)#false then
+      expr:expr+u[l,j+j[i]]*diff(f,u[l,j]) ,
+  expr)$
+ 
+/*************************************************************/
+/*                                                           */
+/*  fpsi(l,j) serves to calculate the coefficient            */
+/*  functions psi[l,j] through the use of the recursive      */
+/*  formulae for the first and higher order prolongations.   */
+/*                                                           */
+/*************************************************************/
+ 
+fpsi(l,j):=block([expr,sum],
+  sum:sum(part(j,i),i,1,p),
+  for i thru p unless sum#1 do
+    if j=j[i] then(
+      expr:totdf(i,phi[l])-
+           sum(u[l,j[ii]]*totdf(i,eta[ii]),ii,1,p),
+      sum:0),
+  for i thru p unless sum=0 do
+    if part(j,i)>=1 then(
+      expr:totdf(i,psi[l,j-j[i]])-
+           sum(u[l,j-j[i]+j[ii]]*totdf(i,eta[ii]),ii,1,p),
+      sum:0),
+  expr)$
+ 
+/**************************************************************/
+/*                                                            */
+/*  extsubst(exp) applies to an expression exp depending on   */
+/*  the variables x[i],u[l] and u[l,j], all the substitutions */
+/*  given by the rhs of v[i] until all the v[i] are replaced. */
+/*  All the partial derivatives are also eliminated from exp, */
+/*  except when the parameter subst_deriv_of_vi is false.     */
+/*  It returns as output the new exp so obtained.             */
+/*                                                            */
+/**************************************************************/
+ 
+/* 18/02/2008 BH: replaced ind by myind */
+extsubst(exp):=block([expr:exp,flag,myind,l,listev,lvar,j],
+ 
+/*  gelist(l1,l2) checks whether or not all the elements of   */
+/*  the list l1 are greater than those of l2.                 */
+
+  gelist(l1,l2):=block([flag:true],
+    for i thru p while flag do
+      if part(l1,i)<part(l2,i) then flag:false,
+    flag),
+ 
+/*  goodlj determines if u[l,j] is the derivative of one      */
+/*  of the v[i].                      
+                        */
+/* 18/02/2008 BH: ind replaced by myind */
+  goodlj(l,j):=block([flag:false],
+    for i thru m unless flag do
+      if l=indl[i] then
+        if gelist(j,indj[i]) then(
+          flag:true,
+          myind:i),
+    flag),
+ 
+  /*  difsub[ll,jj] computes the substitutions needed to      */
+  /*  eliminate the v[i] and their derivatives from exp.      */
+
+/* 18/02/2008 BH: ind replaced by myind */
+  difsub[ll,jj]:=block([difj:jj-indj[myind],expr,flag,lisol,
+    listev:endcons([ll,jj],listev),loop1,loop2,lvar,
+    ssub:sub[myind]],
+    if difj=j[0] then(
+      expr:ssub,
+      go(loop1)),
+    flag:true,
+    for ii thru p while flag do
+      if part(difj,ii)>=1 then(
+        expr:part(difsub[ll,jj-j[ii]],2),
+        expr:diff(expr,x[ii]),
+        flag:false),
+    expr:apply1(expr,rule1,rule2),
+    loop1,
+    lvar:listofvars(expr),
+    for var in lvar do(
+      if formu1(var)#false then
+      if goodlj(l,j) then
+      if not member([l,j],listev) then(
+      for index in listev do
+        if l=index[1] and gelist(j,index[2]) then
+        error("wrong choice of variables for substitutions !"),
+      expr:subst(difsub[l,j],expr))),
+    lisol:solve(u[ll,jj]=expr,u[ll,jj]),
+    if listp(part(lisol,1)) then lisol:part(lisol,1),
+    return(part(lisol,1))),
+ 
+  /*  main instructions for the extsubst procedure.           */
+ 
+  depends(u,listx),
+  listev:[],
+  flag:true,
+  while flag do(
+    flag:false,
+    lvar:listofvars(expr),
+    for var in lvar do
+      if formu1(var)#false then
+        if goodlj(l,j)=true then
+        if subst_deriv_of_vi=true then(
+          expr:subst(difsub[l,j],expr),
+          flag:true)
+        else if member(var,listv) then(
+          expr:subst(u[l,j]=sub[myind],expr),
+          flag:true)),
+  remove(u,depends),
+  expr)$
+
+/**************************************************************/
+/*                                                            */
+/*  searchcoef(exp): given an expression exp which is a       */
+/*  polynomial in the derivatives u[l,j] (|j|>=1) of the      */
+/*  u[l], this function finds all the coefficients of the     */
+/*  various partial derivatives and puts these coefficients   */
+/*  in one of the two lists lode[1] and lode[2] according     */
+/*  to their length.                                          */
+/*                                                            */
+/**************************************************************/
+ 
+searchcoef(exp):=block([bcf,expr:exp,hpt,i0,index,listsymb,
+  listvar,numvar,symb,summax,sumnew,sumlevel,othersumnew],
+  local(putinlist,mac1,mac2,mac3),
+ 
+  /*  putinlist(expr) is used to put the coefficients of      */
+  /*  the partial derivatives in the good list.               */
+
+  putinlist(expr):=block([lgt],
+    if part(expr,0)#"+" then lgt:1 else lgt:2,
+    lode[lgt]:endcons(expr,lode[lgt])),
+
+/* no longer used */
+/* begin TAKEN OUT
+   putinlist(expr):=block([lgt],
+    if part(expr,0)#"+" then lgt:1 else lgt:2,
+/* 02/23/2006 WH attempt to remove duplicates */
+/* start of changes added these lines */
+   if (not member(expr,lode[lgt])) 
+   then(
+       lode[lgt]:endcons(expr,lode[lgt])
+       ) 
+   else( print("Warning! Expr not added to list lode[lgt]!"),
+         print("where lgt =", lgt," and expr = ", expr)
+       )),
+/* end of changes */
+end TAKEN OUT */
+
+  /*  mac1 is a macro function used to create the k-th unit   */
+  /*  block of instructions needed by the coefficients        */
+  /*  extraction procedure.                                   */
+  
+  mac1(k,x)::=buildq(
+    [i0:concat('i,k-1),i1:concat('i,k),
+    hp:concat('hp,k),rest:concat('rest,k),k,x],
+    block([lp1,lp2,i1:i0,hp,rest],
+
+  lp1,  i1:i1+1,
+        if i1>numvar then(
+          if expr#0 then putinlist(expr),
+          return('out)),
+
+ /* In Maxima, expressions have to be expanded to give an accurate result */
+ /* for hipow 19/02/2008 BH */
+ /* 02/19/2008 BH: hipow(expr) replaced by hipow(expand(expr)) */
+if k=1 then if not member(listvar[i1],reslistvar) 
+        then return('fin),
+	  hp:hipow(expand(expr),listvar[i1]),
+  lp2,  if hp=0 then go(lp1),
+        bcf:bothcoef(expr,listvar[i1]^hp),
+
+ /* In Maxima, expressions have to be expanded to give an accurate result */
+ /* for hipow BH: 19/02/2008 */
+ /* 02/19/2008 BH: added expand on expr and rest below */
+        expr:expand(part(bcf,1)),
+        rest:expand(part(bcf,2)),
+
+        if expr#0 then x,
+        expr:rest,
+        hpt:hipow(expr,listvar[i1]),
+        if hpt=hp then(
+          index:index+1,
+          symb:concat('symb,index),
+          listsymb:endcons(symb=listvar[i1]^hp,listsymb),
+          if hp=1 then(
+            expr:subst(listvar[i1]^(1/3),listvar[i1],expr),
+            expr:subst(symb,listvar[i1]^(1/3),expr), 
+		expr:subst(listvar[i1]^3,listvar[i1],expr),
+		expr:expand(expr)) 
+          else
+             expr:subst(symb,listvar[i1]^hp,expr), 
+/* 02/19/2008 BH: added expand on expr */
+/* 09/10/2009 WH: replaced expr:=expand(expr) by expr:expand(expr) */
+/*	    expr:=expand(expr), */
+          expr:expand(expr),
+          hp:hipow(expr,listvar[i1]))
+        else
+          hp:hpt,
+        go(lp2))),
+ 
+  /*  mac2 and mac3 are macro functions used to generate      */
+  /*  the complete set of instructions needed for the         */
+  /*  coefficients extraction procedure.                      */
+  
+  mac2(k,x)::=buildq([k,x],
+    if k=1 then mac1(k,x) else mac2(k-1,mac1(k,x))),
+  mac3(k)::=buildq([k],
+    mac2(k,putinlist(expr))),
+ 
+  /*  main instructions for the searchcoef procedure.         */
+  
+  if expr=0 then return(expr),
+ 
+  listvar:reverse(sublist(listofvars(expr),logicformu1)),
+  if highest_derivatives#all then(
+  summax:0,
+  flag1:false,
+  for var in listvar do(
+    formu1(var),
+    sumnew:sum(part(j,i),i,1,p),
+    if sumnew>summax then summax:sumnew),
+  sumlevel:summax-highest_derivatives,
+    if sumlevel<=0 then(if flag1=false then(
+  print("You are using all the derivatives in the prolongation."),
+    reslistvar:listvar,
+    flag1:true))
+  else(reslistvar:[],
+    for var in listvar do(
+       formu1(var),
+       othersumnew:sum(part(j,i),i,1,p),
+          if othersumnew>sumlevel then(
+          reslistvar:endcons(var,reslistvar)))))
+  else reslistvar:listvar,
+
+  numvar:mylength(listvar),
+  if numvar=0 then(
+    putinlist(expr),
+    return(numvar)),
+  i0:0,
+  index:0,
+  listsymb:[],
+  ev('mac3(numvar),mac3),
+
+  lode[1]:sublis(listsymb,lode[1]),
+  lode[2]:sublis(listsymb,lode[2]))$
+ 
+/**************************************************************/
+/*                                                            */
+/*  simpleqn(): given two lists of determining equations      */
+/*  in eta[i] and phi[l], one being lode[1] containing the    */
+/*  monomials and the other being lode[2] containing the      */
+/*  polynomials, this function produces a unique list of      */
+/*  determining equations, equivalent to the union of the     */
+/*  first two lists but completely free of repetition and     */
+/*  differential redundancy.                                  */
+/*  This new list is identified by lode.                      */
+/*                                                            */
+/**************************************************************/
+ 
+/* 18/02/2008 BH: ind replaced by myind */
+simpleqn():=block([derivsubst:true,expr,expr2,myind,ind1,ind2,
+  info,lgt,lgt1,lgt2,temp,temp2,tempnew],
+  local(diffdegree,order),
+  listexpr1:[], 
+
+/* printwarning(expr1,expr2,listexpr1) prints that expr1,i.e. */
+/* the coefficient of expr2, is canceled provided expr1 is a */
+/* nontrivial factor occurring for the first time.            */
+/* Printwarning returns listexp1, which is a list of all such */
+/* factors that have been canceled, but free of repetition.   */
+
+/* 02/23/2006 WH: printwarning was controlled by warnings flag */
+/* and listexpr1 was only built if warnings=true */
+/* now: actual printing only happens if warnings=true */
+/* but listexpr1 is always built for later display */
+
+printwarning(expr1,expr2,listexpr1):=block([],
+if (not scalarp(expr1)) then(
+   if forml1(expr1)#false then expr1:nonvarnum,
+   if (not member(expr1,listexpr1)) then(
+/* begin changes */
+   if warnings=true then(
+      print("Warning! The following factor was eliminated: ",expr1),
+      print("which was the coefficient of ",expr2) ),
+/* end changes */
+listexpr1:cons(expr1,listexpr1)) ),
+listexpr1),
+
+/* eliminator(expr,listexpr1) cancels factors that are        */
+/* completely determined, including sum-free combinations of  */
+/* x[i],u[l], and the parameters in the parameters list.      */
+/* If warnings is true, it prints factors that are eliminated.*/
+/* Whether or not warnings is true, it prints the eliminated  */
+/* denominators. The eliminator return both expr and          */
+/* listexpr1 as rows of a matrixexpr.                         */
+
+eliminator(expr,listexpr1):=block([orgexpr,le,pp,fe,de,coef1,coef2],
+orgexpr:factor(expr),
+expr:orgexpr,
+le:mylength(expr),
+coef1:1,
+coef2:1,
+if le#0 and part(expr,0)="-" then(
+expr:-expr,
+le:mylength(expr)),
+if le#0 and part(expr,0)="/" then(
+fe:factor(expr),
+expr:num(fe),
+de:denom(fe),
+coef1:coef1/de,
+if notfreeofsum(de) then 
+print("Be aware that ",de," occurring as a denominator is eliminated!")
+else(
+if undpar(de) then 
+print("Be aware that ",de," occurring as a denominator is eliminated!")),
+le:mylength(expr)),
+/* start of changes */
+if le#0 and part(expr,0)="*" then
+   for i:1 thru le do(
+   pp:part(expr,i),
+   /* print("--- *** --- part in factorization, pp= ", pp), */
+/* 02/23/2006 WH and 06/12/2006 WH: */
+/* added several lines to cancel long factors that appear */
+/* in the cp1 and cp2 sigma model projects of Michel Grundland */
+/* added but later removed the print statements */
+   if ((not undpar(pp)) and freeofsum(pp)) or 
+      ( pp = u[6]*u[3]+u[5]*u[2]+u[4]*u[1]+1      or 
+        pp = (u[6]*u[3]+u[5]*u[2]+u[4]*u[1]+1)^2  or 
+        pp = (u[6]*u[3]+u[5]*u[2]+u[4]*u[1]+1)^3  or 
+        pp = (u[6]*u[3]+u[5]*u[2]+u[4]*u[1]+1)^4  or 
+        pp = u[4]*u[2]+u[3]*u[1]+1      or
+        pp = (u[4]*u[2]+u[3]*u[1]+1)^2  or
+        pp = (u[4]*u[2]+u[3]*u[1]+1)^3  or
+        pp = (u[4]*u[2]+u[3]*u[1]+1)^4  or
+        pp = u[2]*u[1]+1         or 
+        pp = (u[2]*u[1]+1)^2     or 
+        pp = (u[2]*u[1]+1)^3     or 
+        pp = (u[2]*u[1]+1)^4     or 
+        pp = u[2]^2+u[1]^2+1     or 
+        pp = (u[2]^2+u[1]^2+1)^2 or
+        pp = u[2]^2-u[1]^2+1     or
+        pp = u[2]^2-u[1]^2-1     or
+        pp = u[1]^2+1            or
+        pp = (u[1]^2+1)^2        or
+        pp = u[1]-1              or
+        pp = u[1]+1         )
+   then( coef1:coef1*pp
+      /* , print("-- ### ---, after multiplication by pp, coef1= ", coef1) */
+    )
+   else( coef2:coef2*pp 
+        /* , print("-- ### ---, after multiplication by pp, coef2= ", coef2) */
+       ) 
+), /* closes do  */
+/* 02/23/2006 WH: removed if warnings=true, kept if coef1#1 */
+/* begin changes */
+if coef1#1 then 
+/* end changes */
+listexpr1:printwarning(coef1,orgexpr,listexpr1),
+if coef2#1 then( expr:coef2
+         /* , print("-- ### ---, after cancellations expr =", expr) */
+               ), 
+matrixexpr:matrix([expr],[listexpr1]) ), /* closes block eliminator */
+/* end of changes */
+
+  /*  difdegree(expr,dv) finds the degree of derivation with  */
+  /*  respect to the x[i] and the u[l] of the dependent       */
+  /*  variable dv appearing once in expr.                     */
+
+  diffdegree(expr,dv):=block([sum:0],
+    for i thru p do
+      sum:sum+derivdegree(expr,dv,x[i]),
+    for l thru p do
+      sum:sum+derivdegree(expr,dv,u[l]),
+    sum),
+ 
+  /*  order(list) arranges a list of monomial determining          */
+  /*  equations by increasing order of differentiation.            */
+  /*  02/23/2006 WH: attempt to remove duplicates. As a precaution, */
+  /*  print a warning and expr that was not added to the list.     */
+
+/* 18/02/2008 BH: ind replaced by myind */
+  order(list):=block([expr,flag,myind,info,lvar,newl:list],
+    local(sleq),
+    sleq[myind]:=[],
+    while newl#[] do(
+      expr:part(newl,1),
+      lvar:listofvars(expr),
+      flag:true,
+      for var in lvar while flag do
+        if not freeof(eta,phi,var) then(
+          myind:diffdegree(expr,var),
+          flag:false),
+/* no longer used */
+/* begin TAKEN OUT 
+/* 02/23/2006 WH: attempt to remove duplicates */
+/* 18/02/2008 BH: ind replaced by myind */
+/* start of changes added these lines */
+   if (not member(expr,sleq[myind])) 
+   then(
+        sleq[myind]:endcons(expr,sleq[myind])
+       ) 
+   else print("Warning! Expr not added to list sleq[myind]!  expr = ", expr),
+/* end of changes */
+end TAKEN OUT */
+/* 18/02/2008 BH: ind replaced by myind */
+      sleq[myind]:endcons(expr,sleq[myind]),
+      newl:rest(newl,1) ), /* end do */
+    info:rest(arrayinfo(sleq),2),
+    for subscript in info do(
+      myind:part(subscript,1),
+      newl:append(newl,sleq[myind])),
+    newl),
+  lode[1]:delete(0,lode[1]),
+  lode[2]:delete(0,lode[2]),
+  lgt1:mylength(lode[1]),
+  if lgt1=0 then go(lp1),
+  if lgt1>1 then lode[1]:order(lode[1]),
+
+  /*  here differential redundancies are eliminated from      */
+  /*  the list of determining equations.                      */
+
+  ind1:1,
+  while ind1<=lgt1 do(
+    expr:part(lode[1],ind1),
+      if expr#0 then(matrixexpr:eliminator(expr,listexpr1),
+      expr:matrixexpr[1,1],
+      listexpr1:matrixexpr[2,1]),
+      lode[0]:rest(lode[1],ind1-lgt1-1),
+      lode[1]:rest(lode[1],ind1),
+      for ind2:0 thru 2 do(
+        lode[ind2]:subst(0,expr,lode[ind2]),
+        lode[ind2]:delete(0,lode[ind2])),
+      ind2:1,
+      lgt2:mylength(lode[2]),
+      while ind2<=lgt2 do(
+        expr2:part(lode[2],ind2),
+        if part(expr2,0)#"+" then(
+/* no longer used */
+/* begin TAKEN OUT 
+/* 02/23/2006 WH: attempt to remove duplicates. */
+/* check if expr2 is member of lode[1] and print a warning */
+/* when an expression is not added to the list */
+/* start of changes added these lines */
+   if (not member(expr2,lode[1])) 
+   then(
+        lode[1]:endcons(expr2,lode[1])
+       ) 
+   else print("Warning! Expr2 not added to list lode[1]!  expr2 = ", expr2),
+/* end of changes */
+end TAKEN OUT */
+          lode[1]:endcons(expr2,lode[1]),
+          lode[2]:append(rest(lode[2],ind2-lgt2-1),
+                         rest(lode[2],ind2)),
+          lgt2:lgt2-1)
+        else ind2:ind2+1),
+      if mylength(lode[1])>1 then lode[1]:order(lode[1]),
+      lode[1]:cons(expr,lode[1]),
+      lode[1]:append(lode[0],lode[1]),
+      ind1:mylength(lode[0])+1,
+      lgt1:mylength(lode[1]), 
+    ind1:ind1+1) ,
+ 
+  kill(lode[0]),
+  if mylength(lode[1])>1 then lode[1]:order(lode[1]),
+ 
+  /*  here we arrange the list of determining equations by    */
+  /*  increasing length, eliminate repetitions, and make      */
+  /*  some more algebraic simplifications.                    */
+
+  lp1,
+  temp:lode[2],
+  kill(lode[2]),
+  while temp#[] do(
+    expr:part(temp,1),
+    lgt:mylength(expr),
+/* 02/23/2006 WH: attempt to remove duplicates */
+/* start of changes added these lines */
+/* no longer used */
+/* begin TAKEN OUT
+   if (not member(expr,lode[lgt])) 
+   then(
+        lode[lgt]:endcons(expr,lode[lgt])
+       ) 
+   else( print("Warning! Expr not added to lode[lgt], where lgt = ", lgt),
+        print("expr = "),
+        print(expr),
+        print("factored expr ="),
+        print(factor(expr)), 
+        print("for lgt =", lgt," lode[lgt] = "),
+        print(lode[lgt])
+       ),
+/* end of changes */
+end TAKEN OUT */
+/* 18/02/2008 BH: ind replaced by myind */
+    lode[lgt]:endcons(expr,lode[lgt]), 
+    temp:rest(temp,1)),
+  info:rest(arrayinfo(lode),2),
+  for subscript in info do(
+    ind1:part(subscript,1),
+    lgt:mylength(lode[ind1]),
+    for myind thru lgt do(
+      expr:part(lode[ind1],myind),
+    if expr#0 then(matrixexpr:eliminator(expr,listexpr1),
+    expr:matrixexpr[1,1],
+    listexpr1:matrixexpr[2,1]),
+  lode[ind1][myind]:expr),
+    temp2:[],
+    while lode[ind1]#[] do(
+      expr:part(lode[ind1],1),
+      lode[ind1]:subst(0,expr,lode[ind1]),
+      lode[ind1]:delete(0,lode[ind1]),
+      temp2:subst(0,expr,temp2),
+      temp2:delete(0,temp2),
+/* no longer used */
+/* begin TAKEN OUT 
+/* 02/23/2006 WH: attempt to remove duplicates */
+/* start of changes added these lines */
+   if (not member(expr,temp2)) 
+   then(
+       temp2:endcons(expr,temp2)
+       ) 
+   else print("Warning! Expr not added to list temp2!  expr = ", expr)
+/* otherwise the end do comes here */
+closeparenthesis, /* for end do */
+/* end of changes */
+end TAKEN OUT */
+    temp2:endcons(expr,temp2) ), /* end do */
+    temp:append(temp,temp2)),
+    remarray(lode),
+/* start of changes here here here */
+/* 02/23/2006 WH: attempt to remove duplicates in list temp ---> lode later */
+/* after all simplifications are done */
+   if removeduplicatesmemory=true then(
+       print("Number of equations in list temp before removing duplicates:",
+           mylength(temp)),
+           tempnew:remdupl(temp),
+       print("Number of equations in list temp after removal of duplicates:",
+           mylength(temp)) ) 
+   else tempnew:temp,
+/* end of changes */
+  lode:tempnew)$
+ 
+/**************************************************************/
+/*                                                            */
+/*  printeqn(list) is a very simple function which prints     */
+/*  the elements of a list in an equation-like form.          */
+/*                                                            */
+/**************************************************************/
+ 
+printeqn(list):=block([pli,lgt:mylength(list)],
+  print(" "),
+  for i thru lgt do(
+     pli:part(list,i),
+     if freeofsum(pli) then print("Equation",i,":",pli=0)
+     else(print("Equation",i,":"),
+     print(pli=0))))$
+ 
+/**************************************************************/
+/*                                                            */
+/*  remdupl(list) is a function which removes duplicates      */
+/*  in a list (based on endcons function).                    */
+/*  Written by Michael colagrosso on February 24, 2006.       */
+/*                                                            */
+/**************************************************************/
+
+remdupl(list):=block([longlist,filteredlist:[]],
+longlist:list,
+  for kk:1 thru mylength(longlist) do(
+      if (not member(longlist[kk],filteredlist)) then
+         filteredlist:endcons(longlist[kk],filteredlist)), 
+return(filteredlist))$
+
+/**************************************************************/
+/*                                                            */
+/*  remduplhash(list) is a function which removes duplicates  */
+/*  in a list (based on hashed list).                         */
+/*  Written by Michael Colagrosso on February 24, 2006.       */
+/*                                                            */
+/**************************************************************/
+
+/* new remduplhash written by Barton Willis December 27-29, 2010 */
+remduplhash(list):=block([longlist,filteredlist],
+local(filteredlist),
+longlist:list,
+  for kk:1 thru mylength(longlist) do(
+      filteredlist[longlist[kk]]:longlist[kk]), 
+  filteredlist:listarray(filteredlist),
+return(filteredlist))$
+
+/*
+remduplhash(list):=block([longlist /*,filteredlist:[] */ ],
+longlist:list,
+  for kk:1 thru mylength(longlist) do(
+      filteredlist[longlist[kk]]:longlist[kk]), 
+  filteredlist:listarray(filteredlist),
+return(filteredlist))$
+*/
+
+/* Start changes. WH December 27-29, 2010 at 16:00 */
+/**************************************************************/
+/*                                                            */
+/*  sortlenold(list) is a function to sort entries in a list  */
+/*  according to their length (= number of terms in a sum).   */
+/*  Algorithm provided by Dinesh Mehta.                       */
+/*  Written by Willy Hereman on Tuesday, March 7, 2006.       */
+/*                                                            */
+/**************************************************************/
+
+/* sortlennew written by Barton Willis December 27-29, 2010 */
+sortlennew(list) := sort( list, lambda([a,b], 
+                          nterms(expand(a)) < nterms(expand(b)) )); 
+
+/* start taken out
+sortlenold(list):=block([mylist, lenmylist, key, ii, jj /* , 
+                         filteredlist:[] */ ],
+mylist:list,
+lenmylist: mylength(mylist), 
+/* print("Length of mylist = ", lenmylist), */
+  for jj:2 thru lenmylist do(
+      key:mylist[jj], 
+/*      print("for ii=",ii," and jj=",jj, " entry key = ", key), */
+      ii:jj-1, 
+/*      print("updated value of ii =", ii), */
+      while ii>0 and nterms(expand(mylist[ii])) > nterms(expand(key)) do(  
+        mylist[ii+1]:mylist[ii], 
+/*        print("for ii=",ii," mylist[ii+1] = ", mylist[ii+1]), */
+        ii:ii-1
+/*        , print("updated value of ii=",ii) */ 
+              ), /* end do2 */ 
+      mylist[ii+1]:key ), /* end do1 */
+return(mylist) )$
+end taken out */
+/* End changes. WH December 27-29, 2010 at 16:00 */
+
+/* 06/12/2007 WH: and 02/19/2007 BH: */
+/**************************************************************/
+/*                                                            */
+/* mylength(exp) replaces the length function, which gave an  */
+/* error in maxima when applied to atoms.	              */
+/*                                                            */
+/**************************************************************/
+
+/* 01/01/2010 WH: replaced */
+/* mylength(exp):=block(if atom(exp) then 1 else length(exp)); */
+
+mylength(exp):=block(if atom(exp) then 0 else length(exp));
+
+/* alternate form of mylength initially written by WH on 07/04/2007 */
+/*******************************************************************/
+/* 07/04/2007 WH: defined a new function mylength                  */
+/* Purpose: the function length in maxima did work work on an atom */
+/*******************************************************************/
+
+/*
+mylength(myexpr):=block([len],
+   if atom(myexpr) then len:0 
+      else len:length(myexpr),
+   return(len) 
+)$
+*/ 
+
+/* ************************************************************** */
+
+/**************************************************************/
+/*                                                            */
+/*  symmetry(ind1,ind2,ind3) stands for the main program.     */
+/*  a call to this function initiates the computation while   */
+/*  the three arguments enable the user to control partially  */
+/*  the execution.                                            */
+/*                                                            */
+/**************************************************************/
+
+/* 09/10/2009 WH: replaced commentinter by commentnew() */
+/* to create one universal comment */ 
+/* commentinter():=block( is replaced by commentnew():=block( */
+commentnew():=block(
+print("/*********************************************************/"),
+print("/*  Welcome to the Macsyma program for the computation   */"),
+print("/*   of Lie-point symmetries of differential equations  */"),
+/* print("/*          (in interactive or batch mode)               */"), */
+print("/*     Written by Benoit Champagne and Willy Hereman     */"),
+print("/*  Code adjusted for the public domain software Maxima  */"),
+print("/*         by Benoit Huard and Willy Hereman             */"),
+print("/*       Project supervision: Pavel Winternitz           */"),
+/* print("/*        Version 1.0 released on June 1991              */"), */
+/* print("/*        Version 2.0 released on May 29, 1995           */"), */
+/* print("/*        Version 3.0 released on November 28, 2009        */"), */
+/* print("/*        Version 3.1 released on January 1, 2010        */"), */
+print("/*        Version 3.2 released on December 29, 2010        */"), 
+print("/*           Program name: symmgrp2010.max               */"),
+print("/*                Copyright 1991-2011                    */"),
+print("/*********************************************************/"))$
+
+/* no longer used */ 
+/* begin TAKEN OUT 
+commentbatch():=block(
+print("/*********************************************************/"),
+print("/*      welcome to the macsyma program for the           */"),
+print("/*         calculation of the symmetry group             */"),
+print("/*                 in batch mode                         */"),
+print("/*       written by B. Champagne and W. Hereman          */"),
+print("/*         project supervision: P. Winternitz            */"),
+print("/*        version 2.0 released on may 29, 1995           */"),
+print("/*                   Copyright 1991                      */"),
+print("/*********************************************************/"))$
+end TAKAN OUT */
+ 
+symmetry(ind1,ind2,ind3):=block([x,u,eta,phi,expr],
+  local(indj,indl,sub),
+
+/* 09/10/2009 WH: added the following print statements */
+print(" "),
+print("Code runs under the commercial software Macsyma as well as the"),
+print("public domain software Maxima (version 3.16.3 or higher)."),
+print("NOTE: Due to a problem with the `depends' function the code does not"),
+print("work under Maxima v. 5.21.0 through v. 5.22.1."),
+print(" Hopefully, this bug will be fixed when Maxima 5.23.0 is released."), 
+print("Please report problems to Willy Hereman at whereman@mines.edu."),
+print(" ----------------------------------------------------------------- "), 
+print("Computation started. Execution may be slow for complicated cases!"),
+print(" ----------------------------------------------------------------- "),
+
+ /* instructions which serve to read in the data.  */
+if ind1=0 then(
+/* 09/10/2009 WH: one universal comment in 2009 version  */
+/* replaced commentinter(), by commentnew(), */
+ commentnew(),
+ p:read("Number of independent variables ?"),
+ q:read("Number of dependent variables ?"),
+ m:read("Number of equations in the complete system ?"),
+ parameters:read("List of nonzero parameters ? enter e.g.[a,b,...] or []"),
+ sublisteqs:read("List of equations ? enter e.g. [e1,e3] or [all]"),
+ highest_derivatives:read("Level of derivatives ? enter integer or all"),
+ warnings:read("Warnings ? enter true or false"),
+ info_given:read("Information given ? enter true or false"),
+ liste:makelist(read("Equation",i),i,1,m),
+ listv:makelist(read("Variable",i),i,1,m),
+ if info_given=true then(
+ listeta:makelist(read("eta",i),i,1,p),
+ listphi:makelist(read("phi",i),i,1,q)),
+ print(" ----------------------------------------------------------------- "), 
+ print("Computation started. Execution may be slow for complicated cases!"),
+ print(" ----------------------------------------------------------------- "))
+ else(
+/* 09/10/2009 WH: one universal comment in 2009 version */
+/* replaced commentbatch(), by commentnew(), */
+    commentnew(),
+    liste:ev(makelist(concat(e,i),i,1,m),eval),
+    listv:ev(makelist(concat(v,i),i,1,m),eval),
+    listeta:ev(makelist(concat(eta,i),i,1,p),eval),
+    listphi:ev(makelist(concat(phi,l),l,1,q),eval),
+ print(" ----------------------------------------------------------------- "), 
+ print("Computation started. Execution may be slow for complicated cases!"),
+ print(" ----------------------------------------------------------------- ")),
+ 
+  /*  instructions used to set up the environment.            */
+  if (part(sublisteqs,1)=all) then(
+       r:m,
+       subliste:liste)
+       else(
+           r:mylength(sublisteqs),
+           if r<=m then(subliste:ev(sublisteqs))
+           else print("*** Error in sublisteqs ? ***")),
+  listarith:true,
+  ratdenomdivide:false,
+  j[0]:makelist(0,i,1,p),
+  for i thru p do j[i]:makelist(if j=i then 1 else 0,j,1,p),
+  listx:makelist(x[i],i,1,p),
+  listu:makelist(u[l],l,1,q),
+  listxu:append(listx,listu),
+  for j:1 thru mylength(listxu) do assume(part(listxu,j)>0),
+  if parameters#[] then(
+    ss:mylength(parameters),
+    for i:1 thru ss do assume(part(parameters,i)>0)),
+ if info_given=false then depends([eta,phi],listxu),
+ if info_given=true then(
+    array(eta,p),
+    eta[0]:0,
+    array(phi,q),
+    phi[0]:0,
+    for i thru p do eta[i]:part(listeta,i),
+    for l thru q do phi[l]:part(listphi,l)),
+  if ind2=0 then remarray(psi),
+  psi[l,j]:=fpsi(l,j),
+  remarray(difsub),
+  kill(lode),
+  lode[i]:=[],
+  if m=0 then return('done),
+  algsols:solve(liste,listv),
+  if listp(part(algsols,1)) then algsols:part(algsols,1),
+
+  for i thru m do
+    if formu1(listv[i])=false then
+      error("wrong choice of variable for substitution:",
+            listv[i])
+    else(
+      indj[i]:j,
+      indl[i]:l,
+      sub[i]:part(algsols,i,2)),
+ 
+  /*  instructions which control the execution of the        */
+  /*  computation.                                           */
+
+  if ind3=0 then
+      for i thru r do(
+      expr:provf(subliste[i]),
+      if expr#0 then expr:ev(expr,psi),
+      if expr#0 then expr:extsubst(expr),
+      if expr#0 then expr:ratexpand(expr),
+      if expr#0 then expr:scanmap(ratpowexp,expr),
+      if expr#0 then expr:ratexpand(expr),
+      if expr#0 then denum[i]:denom(expr),
+      if expr#0 then expr:num(expr),
+      searchcoef(expr))
+  else(
+      for i thru r do(
+      print("Working on equation",i),
+      print("  enter provf"),
+      expr:provf(subliste[i]),
+      print("  evaluate psi"),
+      expr:ev(expr,psi),
+      print("  enter extsubst"),
+      expr:extsubst(expr),
+      print("  enter ratexpand"),
+      expr:ratexpand(expr),
+      expr:scanmap(ratpowexp,expr),
+      expr:ratexpand(expr),
+      denum[i]:denom(expr),
+      expr:num(expr),
+      print("  enter searchcoef"),
+      searchcoef(expr)),
+      print("  enter simpleqn")),
+ 
+ flag2:false,
+ if highest_derivatives#all and flag1=false then(
+   if highest_derivatives=1 then(
+    print("Using only the information from terms involving the highest"),
+    print("derivatives, i.e.:",reslistvar),
+    print("in the search for determining equations."))
+   else(if highest_derivatives=2 then(
+    print("Using only the information from terms involving the highest"),
+    print("and second highest derivatives, i.e.: ",reslistvar),
+    print("in the search for determining equations."))
+   else(if highest_derivatives=3 then(
+    print("Using only the information from terms involving the highest,"),
+    print("the second and the third highest derivatives, i.e.: "),
+    print(reslistvar),
+    print("in the search for determining equations."))
+   else(if highest_derivatives>3 then(
+    print("Using only the information from terms involving the highest"),
+    print("the second, ... down to the ",highest_derivatives,"th"),
+    print("highest derivatives, i.e.: ",reslistvar),
+    print("in the search for determining equations."))))))
+ else if highest_derivatives=all then
+      if flag2=false and flag1=false then(
+      print("You are using all the derivatives in the prolongation"),
+      print("in this equation."),
+      flag2:true),
+if r=m then(if m>=2 then(
+     print("You are using the",m,"equations of the system.")))
+   else if r<m then(if r>=2 then(
+      print("You are using only the",r,"equations:",sublisteqs),
+      print("of the given system consisting of",m,"equations in total."))
+     else(if r=1 then(
+      print("You are using only the equation:",sublisteqs),
+      print("of the given system consisting of",m,"equations in total.")))),
+      print("*** Number of determining equations before simplifications:",
+        mylength(lode[1])+mylength(lode[2]),". ***"),
+    if mylength(lode[1])+mylength(lode[2])=0 then lode:[],
+    if mylength(lode[1])+mylength(lode[2])#0 then(
+/* start of changes */ 
+/* 02/23/2006 WH: attempt to remove duplicates in lode[1] and lode[2] */
+       if mylength(lode[1])#0 then( 
+       if removeduplicates=true then(
+       print("Number determining eqs. in lode[1] before removing duplicates:",
+           mylength(lode[1])),
+       lode[1]:remdupl(lode[1]),
+       print("Number determining eqs. in lode[1] after removing duplicates:",
+           mylength(lode[1])) )
+       ),
+       if mylength(lode[2])#0 then( 
+       if removeduplicates=true then(
+       print("Number determining eqs. in lode[2] before removing duplicates:",
+           mylength(lode[2])),
+       lode[2]:remdupl(lode[2]),
+       print("Number determining eqs. in lode[2] after removing duplicates:",
+           mylength(lode[2]))
+       ) ),
+/* end of changes */ 
+ /* now lists lode[1] and lode[2] simplified and combined in one list lode */
+       simpleqn(),
+       if listexpr1#[] then
+  print("List of factors that were canceled: ",listexpr1) ),
+  print("Number of determining equations after simplifications:",
+       mylength(lode)),
+  if lode#[] then(
+/* 02/23/2006 WH: attempt to remove duplicates just before storing lode */
+     if removeduplicates=true then(
+     print("Number of determining equations before removing duplicates:",
+           mylength(lode)),
+     lode:remdupl(lode),
+     print("Number of determining equations after removing duplicates:",
+           mylength(lode)) ),
+     if sortlist=true then(
+     print("Number of determining equations before resorting lode:",
+          mylength(lode)),
+/* Start changes. WH December 27-29, 2010 at 16:00 */
+/* begin taken out
+lode:[
+diff(eta[2],u[1]),
+diff(eta[2],x[1]),
+diff(eta[1],u[1]),
+diff(phi[1],u[1],2),
+diff(eta[2],x[2])-3*(diff(eta[1],x[1])),
+diff(diff(phi[1],x[1]),u[1])-diff(eta[1],x[1],2),
+u[1]*(diff(phi[1],x[1]))*bb+diff(phi[1],x[2])+diff(phi[1],x[1],3),
+u[1]*(diff(eta[2],x[2]))*bb-u[1]*(diff(eta[1],x[1]))*bb+phi[1]*bb+
+3*(diff(diff(phi[1],u[1]),x[1],2))-diff(eta[1],x[2])-diff(eta[1],x[1],3)
+],
+end taken out */ 
+/* begin taken out
+lode:[
+diff(eta[2],x[2])-3*(diff(eta[1],x[1])),
+diff(eta[2],u[1]),
+diff(diff(phi[1],x[1]),u[1])-diff(eta[1],x[1],2),
+diff(eta[2],x[1]),
+diff(eta[1],u[1]),
+diff(phi[1],u[1],2),
+diff(eta[2],x[2])-3*(diff(eta[1],x[1])),
+diff(diff(phi[1],x[1]),u[1])-diff(eta[1],x[1],2),
+u[1]*(diff(phi[1],x[1]))*bb+diff(phi[1],x[2])+diff(phi[1],x[1],3),
+u[1]*(diff(eta[2],x[2]))*bb-u[1]*(diff(eta[1],x[1]))*bb+phi[1]*bb+
+3*(diff(diff(phi[1],u[1]),x[1],2))-diff(eta[1],x[2])-diff(eta[1],x[1],3),
+u[1]*(diff(phi[1],x[1]))*bb+diff(phi[1],x[2])+diff(phi[1],x[1],3),
+diff(eta[2],x[1]),
+diff(eta[1],u[1])
+],
+end taken out */
+/* begin taken out
+print("DEBUG POINT 0. Giving the following lode inside the code 
+for experimentation with sorting functions:", lode),
+     lodeold:sortlenold(lode),
+     print("DEBUG POINT 1. lodeold based on Willy's sortlenold function:",
+           lodeold),
+     lodenew:sortlennew(lode), 
+     print("DEBUG POINT 2. lodenew based on Barton's sortlennew function:",
+           lodenew),
+end taken out */
+     lode:sortlennew(lode),
+/* End changes. WH December 27-29, 2010 at 16:00 */
+     print("Number of determining equations after resorting lode:",
+          mylength(lode)) ),
+     print("*** Number of determining equations after all simplifications:",
+          mylength(lode),". ***"),
+     print("*** These determining equations are stored in lode. ***") ), 
+'done)$
+
+/* 
+print("Code symmgrp2009.max of November 28, 2009 was successfully loaded.");
+*/
+print("Code symmgrp2010.max of December 29, 2010 was successfully loaded.");
+
+/* ****************************** end of all *************************** */

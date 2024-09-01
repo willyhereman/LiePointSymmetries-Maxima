@@ -1,0 +1,41 @@
+ /* Last updated: December 19, 2020 by Hereman in Boulder */
+/* For use with symmgrp2020.max under Maxima */
+
+/* File name: Fokker-Planck-Kolmogorov-run1-Dec19-2020-wh.dat. */
+/* Data file for the Fokker-Planck-Kolmogorov equation with varying coefficient given in the online manuscript Faruk Gungor. */
+
+/* u_t - u_xx + pp(x) u_y = 0 */
+/* Assign u[1] to u, x[1] to x, x[2] to y, and x[3] to t, pp is a function of x only. */
+
+/* number of independent variables: */
+p : 3$
+
+/* number of dependent variables: */
+q : 1$
+
+/* number of equations in the system: */
+m : 1$
+
+warnings: false$
+parameters : []$
+sublisteqs : [all]$
+subst_deriv_of_vi: true$
+highest_derivatives : all$
+
+/* information is give in this run. */
+info_given : true$
+
+/* careful the symbol p is reserved for the number of independent variables. So, use pp instead. */
+depends(pp,x[1]);
+
+depends([eta1,f1,f2],[x[1],x[2],x[3]]);
+depends([eta2,eta3],[x[2],x[3]]);
+
+phi1 : f1*u[1]+f2;
+
+e1 : u[1,[0,0,1]] - u[1,[2,0,0]] + pp*u[1,[0,1,0]];
+/* pp is function of x only */
+v1 : u[1,[0,0,1]];
+
+/* end of data file Fokker-Planck-Kolmogorov-run1-Dec19-2020-wh.dat. */
+

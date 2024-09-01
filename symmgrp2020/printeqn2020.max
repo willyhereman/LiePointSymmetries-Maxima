@@ -1,0 +1,52 @@
+
+/* Last updated: September 9, 2020 at 15:00 by Hereman at home in Boulder */
+
+/**************************************************************/
+/*                                                            */
+/* mylength(exp) replaces the length function, which gave an  */
+/* error in maxima when applied to atoms.	                  */
+/*                                                            */
+/**************************************************************/
+
+mylength(exp):=block(if atom(exp) then 0 else length(exp));
+
+/**************************************************************/
+/*                                                            */
+/*  printeqn(list) is a very simple function which prints     */
+/*  the elements of a list in an equation-like form.          */
+/*                                                            */
+/**************************************************************/
+
+print("printeqn(lode) will print the full list of determining equations.");
+
+freeofsum(expr):=freeof("+",expr)$ 
+printeqn(list):=block([pli,lgt:mylength(list)],
+  print(" "),
+  for i thru lgt do(
+     pli:part(list,i),
+     if freeofsum(pli) then print("Equation",i,":",pli=0)
+     else(print("Equation",i,":"),
+     print(pli=0))))$
+
+/**************************************************************/
+/*                                                            */
+/*  printselecteqn(list,nn,mm) prints the elements of a list  */
+/*  in the range nn thru mm in an equation-like form.         */
+/*                                                            */
+/**************************************************************/
+ 
+print(" ");
+print("printselecteqn(lode,nn,mm) will print the determining equations starting from"); 
+print("equation nn through equation mm, where 1 =< nn < length of list and");
+print("nn =< mm <= length of list.");
+ 
+printselecteqn(list,nn,mm):=block([pli,lgt:mylength(list)],
+  print(" "),
+  for i:nn thru mm do(
+     pli:part(list,i),
+     if freeofsum(pli) then print("Equation",i,":",pli=0)
+     else(print("Equation",i,":"),
+     print(pli=0))))$
+ 
+/**************************************************************/
+

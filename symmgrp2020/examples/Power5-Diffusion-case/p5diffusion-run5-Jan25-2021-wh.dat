@@ -1,0 +1,59 @@
+ /* Last updated: January 25, 2021 by Hereman in Boulder */
+/* For use with symmgrp2020.max under Maxima */
+
+/* File name: p5diffusion-run5-Jan25-2021-wh.dat. */
+/* Data file for diffusion equation with power 5 diffusivity given in the online manuscript Faruk Gungor. */
+
+/* u_t - x^5 u_xx + x u_y = 0 */
+/* Assign u[1] to u, x[1] to x, x[2] to y, and x[3] to t. */
+
+/* number of independent variables: */
+p : 3$
+
+/* number of dependent variables: */
+q : 1$
+
+/* number of equations in the system: */
+m : 1$
+
+warnings: false$
+parameters : [] $
+sublisteqs : [all]$
+subst_deriv_of_vi: true$
+highest_derivatives : all$
+
+/* information is given. */
+info_given : true$
+
+depends([eta1,f1,f2],[x[1],x[2],x[3]]);
+depends([eta2,g1],x[2]);
+depends([g2,eta3],[x[2],x[3]]);
+
+/* f2 must satisfy the original equation itself. */
+/* We will bring that back only at the end to avoid that this constraint is repeated every time. */
+/* gradef(f2,x[3],x[1]^5*diff(f2,x[1],2)-x[1]*diff(f2,x[2])); */
+
+/* f1 must also satisfy the original equation and we need to take that into account in a few runs. */
+/* gradef(f1,x[3],x[1]^5*diff(f1,x[1],2)-x[1]*diff(f1,x[2])); */
+
+eta2 : c1*x[2]^2+c2*x[2]+c3;
+
+g1 : (1/3)*c4*x[2]^3+(1/2)*c5*x[2]^2+c6*x[2]+c7;
+
+g2: -3*c1*x[2]+c4*x[3]+c8;
+
+f1 : -(1/2)*(1/x[1])*diff(g1,x[2],2)-x[1]*diff(g1,x[2])-(3/4)*(x[3]/x[1])*diff(eta2,x[2],3)-(3/2)*x[1]*x[3]*diff(eta2,x[2],2)-(1/(2*x[1]^2))*diff(eta2,x[2],2)+g2;
+
+eta3 : (3/2)*diff(eta2,x[2])*x[3]+g1;
+
+eta1 : -x[1]*diff(eta3,x[3])-x[1]^2*diff(eta3,x[2])+diff(eta2,x[3])+x[1]*diff(eta2,x[2]);
+
+phi1 : f1*u[1]+f2;
+
+e1 : u[1,[0,0,1]]-x[1]^5*u[1,[2,0,0]]+x[1]*u[1,[0,1,0]];
+
+/* eliminate u_t */
+v1 : u[1,[0,0,1]];
+
+/* end of data file p5diffusion-run5-Jan25-2021-wh.dat. */
+

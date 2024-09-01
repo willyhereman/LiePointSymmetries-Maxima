@@ -1,0 +1,41 @@
+/* Last updated: September 8, 2020 by Hereman in Boulder */
+
+/* Data file s-Karpman-run0-Sep8-2020.dat for Karpman's equations: */
+/* Generating all 69 determining equations in one run which could be quite slow. */
+/* Took about 8 minutes on my 2012 Dell Latitude E6440 laptop */
+
+/* Equations and a solution strategy are given in: */
+/* B. Champagne, W. Hereman, and P. Winternitz, */
+/* The computer calculation of Lie point symmetries of large systems of differential equations, */
+/* Computer Physics Communications, 66(2-3), 319-340 (1991). */
+/* DOI: 10.1016/0010-4655(91)90080-5. */
+
+parameters:[s1,s2,w1,w2,a1,a2]; 
+sublisteqs:[all];
+highest_derivatives:all;
+warnings:true;
+subst_deriv_of_vi:true;
+/* no information is given */
+info_given : false$
+
+p:4;
+q:3;
+m:3;
+
+e1:u[1,[0,0,0,1]]+w1*u[1,[0,0,1,0]]+1/2*(s1*(2*u[1,[1,0,0,0]]*u[2,[1,0,0,0]]+
+   2*u[1,[0,1,0,0]]*u[2,[0,1,0,0]]+u[1]*u[2,[2,0,0,0]]+u[1]*u[2,[0,2,0,0]])+
+   s2*(2*u[1,[0,0,1,0]]*u[2,[0,0,1,0]]+u[1]*u[2,[0,0,2,0]]));
+
+e2:u[2,[0,0,0,1]]+w1*u[2,[0,0,1,0]]-1/2*(s1*(u[1,[2,0,0,0]]/u[1]+
+   u[1,[0,2,0,0]]/u[1]-u[2,[1,0,0,0]]^2-u[2,[0,1,0,0]]^2)+
+   s2*(u[1,[0,0,2,0]]/u[1]-u[2,[0,0,1,0]]^2))+a1*u[3];
+ 
+e3:u[3,[0,0,0,2]]-w2^2*(u[3,[2,0,0,0]]+u[3,[0,2,0,0]]+u[3,[0,0,2,0]])-
+   2*a2*u[1]*(u[1,[2,0,0,0]]+u[1,[0,2,0,0]]+u[1,[0,0,2,0]])-
+   2*a2*(u[1,[1,0,0,0]]^2+u[1,[0,1,0,0]]^2+u[1,[0,0,1,0]]^2);
+ 
+v1:u[1,[0,0,0,1]];
+v2:u[2,[0,0,0,1]];
+v3:u[3,[0,0,0,2]];
+
+/* end of data file s-Karpman-run0-Sep8-2020.dat */

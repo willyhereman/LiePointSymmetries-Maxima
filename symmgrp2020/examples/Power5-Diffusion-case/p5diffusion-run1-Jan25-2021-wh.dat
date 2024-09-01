@@ -1,0 +1,39 @@
+ /* Last updated: January 25, 2021 by Hereman in Boulder */
+/* For use with symmgrp2020.max under Maxima */
+
+/* File name: p5diffusion-run1-Jan25-2021-wh.dat. */
+/* Data file for diffusion equation with power 5 diffusivity given in the online manuscript Faruk Gungor. */
+
+/* u_t - x^5 u_xx + x u_y = 0 */
+/* Assign u[1] to u, x[1] to x, x[2] to y, and x[3] to t. */
+
+/* number of independent variables: */
+p : 3$
+
+/* number of dependent variables: */
+q : 1$
+
+/* number of equations in the system: */
+m : 1$
+
+warnings: false$
+parameters : [] $
+sublisteqs : [all]$
+subst_deriv_of_vi: true$
+highest_derivatives : all$
+
+/* information is given. */
+info_given : true$
+
+depends([eta1,f1,f2],[x[1],x[2],x[3]]);
+depends(eta2,[x[2],x[3]]);
+depends(eta3,[x[2],x[3]]);
+
+phi1 : f1*u[1]+f2;
+
+e1 : u[1,[0,0,1]]-x[1]^5*u[1,[2,0,0]]+x[1]*u[1,[0,1,0]];
+/* eliminate u_t */
+v1 : u[1,[0,0,1]];
+
+/* end of data file p5diffusion-run1-Jan25-2021-wh.dat. */
+

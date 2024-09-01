@@ -1,0 +1,52 @@
+/* Last updated: September 8, 2020 by Hereman in Boulder */
+
+/* Data file s-mZK-run0-Sep8-2020.dat for the test run of the modified Zakharov-Kuznetsov equation */
+/* in the manuscript by Du etal Chaos, Solitons, Fractals -- refwork October 15-24, 2019 */
+/* and refereeing of revised manuscript on January 5, 2020 */
+
+/* Eq. 6 in paper: modified Zakharov-Kuznetsov equation: u_t + u u_z + aa*u_z + bb*u_{yyz} + cc*u_{zzz} + mm*u_y = 0 */
+/* for u[y,z,t], assign u[1] to u, x[1] to y, x[2] to z, x[3] to t */
+/* aa, bb, cc, and mm = dd are constants */
+
+/* Added a constant kkk, which should be kkk = 1, to test the solution of the determining equations */
+/* Last updated: September 8, 2020 by Hereman in Boulder */
+
+parameters:[aa,bb,cc,mm]; 
+sublisteqs:[all];
+
+/* no information is given yet -- this will be updated in next runs */
+info_given:false;
+
+highest_derivatives:all;
+warnings:true;
+subst_deriv_of_vi:true;
+
+p:3;
+q:1;
+m:1;
+
+/* for later use */
+/*
+depends(eta1,[x[1],x[3]]);
+depends(eta2,[x[2],x[3]]);
+depends(eta3,x[3]);
+depends(phi1,u[1]);
+*/
+
+/* expected solution when determining equations are solved */
+/*
+eta1 : k5*(x[1]+2*mm*x[3])+k1;
+eta2 : k4*x[3]+k5*x[2]+k2;
+eta3 : 3*k5*x[3]+k3;
+phi1 : -2*k5*(aa*kkk+u[1])+k4;
+*/
+
+/* modified Zakharov-Kuznetsov equation: u_t + u u_z + aa*u_z + bb*u_{yyz} + cc*u_{zzz} + mm*u_y = 0 */
+/* for u[y,z,t], assign u[1] to u, x[1] to y, x[2] to z, x[3] to t */
+
+e1 : u[1,[0,0,1]]+u[1]*u[1,[0,1,0]]+aa*u[1,[0,1,0]]+bb*u[1,[2,1,0]]+cc*u[1,[0,3,0]]+mm*u[1,[1,0,0]];
+/* aa, bb, cc, and mm are constant parameters */
+
+v1 : u[1,[0,0,1]];
+
+/* end of data file s-mZK-run0-Sep8-2020.dat */

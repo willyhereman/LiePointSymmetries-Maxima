@@ -1,0 +1,28 @@
+ /* File name: Fokker-Planck-Kolmogorov-run3-exp-runb-Dec19-2020-wh.mac. */
+
+/* Command file to compute the determining equations of the Fokker-Planck-Kolmogorov equation with p(x) = e^x. */
+
+batchload("c:\\Users\\whereman.NATH\\data\\maxima-5.44.0\\gungor\\symmgrp2020.max")$
+/* I am given the full path explicitly where symmgrp2020.max is placed. */
+
+/* writefile("c:\\Users\\whereman.NATH\\data\\maxima-5.44.0\\gungor\\Fokker-Planck-Kolmogorov-run3-exp-runb-Dec19-2020-wh.out"); */
+/* I am given the full path where Fokker-Planck-Kolmogorov-run3-exp-runb-Dec19-2020-wh.out should be saved. */
+/* writefile is commented out because it is not a standard text file but a lisp file */
+
+batch("c:\\Users\\whereman.NATH\\data\\maxima-5.44.0\\gungor\\Fokker-Planck-Kolmogorov-run3-exp-runb-Dec19-2020-wh.dat")$
+/* Again, the full path where Fokker-Planck-Kolmogorov-run3-exp-runb-Dec19-2020-wh.dat is placed. */
+
+symmetry(1,0,1);
+printeqn(lode);
+
+eta1;
+eta2;
+eta3;
+phi1;
+
+save ("c:\\Users\\whereman.NATH\\data\\maxima-5.44.0\\gungor\\Fokker-Planck-Kolmogorov-lode-run3-exp-runb-Dec19-2020-wh.lsp", lode);
+/* Again, the full path where Fokker-Planck-Kolmogorov-lode-run3-exp-runb-Dec19-2020-wh.lsp will be saved. */
+
+/* closefile(); */
+
+/* end of file Fokker-Planck-Kolmogorov-run3-exp-runb-Dec19-2020-wh.mac. */

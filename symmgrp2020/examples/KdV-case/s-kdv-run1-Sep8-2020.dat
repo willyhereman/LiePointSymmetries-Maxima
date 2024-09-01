@@ -1,0 +1,32 @@
+/* Last updated: September 8, 2020 by Hereman in Boulder */
+
+/* Data file s-kdv-run1-Sep8-2020.dat for the Korteweg-de Vries equation: */
+/* u_t + bb u u_x + u_xxx = 0 */
+/* Assign u[1] to u, x[1] to x, x[2] to t, bb is a constant. */
+
+/* For use with symmgrp2020.max under Maxima */
+
+/* number of independent variables: */
+p : 2$
+
+/* number of dependent variables: */
+q : 1$
+
+/* number of equations in the system: */
+m : 1$
+
+warnings:false$
+parameters : [bb] $
+sublisteqs :[all]$
+subst_deriv_of_vi:true$
+highest_derivatives : all$
+
+/* no information is given yet -- this will be updated in next runs */
+info_given : false$
+
+e1 : u[1,[0,1]]+bb*u[1]*u[1,[1,0]]+u[1,[3,0]];
+/* bb is just a constant parameter */
+v1 : u[1,[0,1]];
+
+/* end of data file s-kdv-run1-Sep8-2020.dat */
+

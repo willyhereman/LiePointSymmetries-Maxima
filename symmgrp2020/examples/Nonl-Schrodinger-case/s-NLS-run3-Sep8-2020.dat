@@ -1,0 +1,56 @@
+/* Last updated: September 8, 2020 by Hereman in Boulder */
+
+/* Data file s-NLS-run3-Sep8-2020.dat for the Nonlinear Schrodinger (NLS) equation. */
+
+/* NLS equation : i u_t + u_xx + a*|u|^2 u = 0 */
+/* Set u = u[1] + i u[2], split in real and imaginary parts gives the system: */
+/*  u[1]_t + u[2]_xx + a*(u[1]^2+u[2]^2) u[2] = 0, */
+/*  u[2]_t - u[1]_xx - a*(u[1]^2+u[2]^2) u[1] = 0. */
+/* Assign x[1] to x, x[2] to t, a is a real parameter to capture the focusing and defocusing NLS eqs. */
+ 
+/* number of independent variables: */
+p : 2 $
+
+/* number of dependent variables: */
+q : 2 $
+
+/* number of equations in the system: */
+m : 2 $
+
+parameters:[a]$
+sublisteqs:[all]$
+subst_deriv_of_vi:true$
+highest_derivatives:all$
+warnings:true$
+
+/* information is given this time. */
+info_given : true$
+
+depends(eta1,[x[1],x[2]]);
+depends([f2,f4],x[1]);
+depends([f1,f5],x[2]);
+depends(eta2,x[2]);
+depends([g1,g2],x[2]);
+
+f3 : 0;
+f6 : 0;
+f4 : -f2;
+f5 : f1;
+g1 : -3*f1;
+
+gradef(eta1,x[2],-2*diff(f2,x[1]));
+gradef(eta1,x[1],2*f1+g1);
+gradef(eta2,x[2],4*f1+2*g1);
+
+eta1 : (2*f1+g1)*x[1]+g2;
+phi1: f1*u[1]+f2*u[2]+f3; 
+phi2: f4*u[1]+f5*u[2]+f6; 
+
+e1 : u[1,[0,1]]+a*(u[1]^2+u[2]^2)*u[2]+u[2,[2,0]];
+e2 : u[2,[0,1]]-a*(u[1]^2+u[2]^2)*u[1]-u[1,[2,0]];
+
+v1 : u[1,[0,1]];
+v2 : u[2,[0,1]];
+
+/* end of command file s-NLS-run3-Sep8-2020.dat */
+

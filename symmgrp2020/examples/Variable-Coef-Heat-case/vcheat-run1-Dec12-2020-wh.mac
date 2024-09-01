@@ -1,0 +1,29 @@
+/* File name: vcheat-run1-Dec12-2020-wh.mac. */
+
+/* Command file to compute the determining equations of a heat equation with a variable coefficient. */
+
+batchload("c:\\Users\\whereman.NATH\\data\\maxima-5.44.0\\gungor\\symmgrp2020.max")$
+/* I am given the full path explicitly where symmgrp2020.max is placed. */
+
+/* writefile("c:\\Users\\whereman.NATH\\data\\maxima-5.44.0\\gungor\\vcheat-run1-Dec12-2020-wh.out"); */
+/* I am given the full path where vcheat-run1-Dec12-2020-wh.out should be saved. */
+/* writefile is commented out because it is not a standard text file but a lisp file */
+
+batch("c:\\Users\\whereman.NATH\\data\\maxima-5.44.0\\gungor\\vcheat-run1-Dec12-2020-wh.dat")$
+/* Again, the full path where vcheat-run1-Dec12-2020-wh.dat is placed. */
+
+symmetry(1,0,1);
+printeqn(lode);
+
+save ("c:\\Users\\whereman.NATH\\data\\maxima-5.44.0\\gungor\\vcheat-lode-run1-Dec12-2020-wh.lsp", lode);
+/* Again, the full path where vcheat-lode-run1-Dec12-2020-wh.lsp will be saved. */
+
+expand(eta1);
+
+expand(eta2);
+
+expand(phi1);
+
+/* closefile(); */
+
+/* end of file vcheat-run1-Dec12-2020-wh.mac. */

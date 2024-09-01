@@ -1,0 +1,41 @@
+
+/* Adjusted for Maxima on May 31, 2007 at CRM in Montreal */
+
+/* Last updated and modified: September 12, 2009 by Hereman */
+/* at 01:50 in Boulder */
+
+/* ********************************************************* */
+/*                                                           */
+/*  printeqn(list): is a simple function which prints the    */
+/*  elements of a list in an equation-like form.             */
+/*                                                           */
+/* ********************************************************* */
+
+freeofsum(expr) := freeof("+",expr)$
+printeqn(list):=block([pli,lgt:length(list)],
+  print(" "),
+  for i thru lgt do(
+     pli : part(list,i),
+     if freeofsum(pli) then print("equation",i,":",pli=0)
+     else (print("equation",i,":"),
+     print(pli=0) ) ))$
+
+/* *********************************************************** */
+ 
+/**************************************************************/
+/*                                                            */
+/*  remdupl(list) is a function which removes duplicates      */
+/*  in a list (based on hashed list).                         */
+/*  Written by Michael Colagrosso on February 24, 2006.       */
+/*                                                            */
+/**************************************************************/
+
+remdupl(list):=block([longlist /* ,filteredlist:[] */ ],
+longlist:list,
+  for kk:1 thru length(longlist) do(
+      filteredlist[longlist[kk]]:longlist[kk]), 
+  filteredlist:listarray(filteredlist),
+return(filteredlist))$
+
+/* ************************************************************ */
+

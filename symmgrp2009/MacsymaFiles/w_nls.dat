@@ -1,0 +1,28 @@
+
+/* Data file w_nls.dat for the Nonlinear Schrodinger (NLS) equation : */
+/* For use with symmgrp2009.max under Maxima or Macsyma */ 
+
+/* number of independent variables: */
+p : 2 $
+
+/* number of dependent variables: */
+q : 2 $
+
+/* number of equations in the system: */
+m : 2 $
+
+parameters:[]$
+sublisteqs:[all]$
+info_given:false$
+subst_deriv_of_vi:true$
+highest_derivatives:all$
+warnings:true$
+
+e1 : u[1,[0,1]]+(u[1]^2+u[2]^2)*u[2]+u[2,[2,0]];
+e2 : u[2,[0,1]]-(u[1]^2+u[2]^2)*u[1]-u[1,[2,0]];
+
+v1 : u[1,[0,1]];
+v2 : u[2,[0,1]];
+
+/* end of data file w_nls.dat */
+

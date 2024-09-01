@@ -1,0 +1,28 @@
+/* File name: p5diffusion-run1-Jan25-2021-wh.mac. */
+
+/* Command file to compute the determining equations of for a diffusion equation with power 5 diffusivity. */
+
+batchload("c:\\Users\\whereman.NATH\\data\\maxima-5.44.0\\gungor\\symmgrp2020.max")$
+/* I am given the full path explicitly where symmgrp2020.max is placed. */
+
+/* writefile("c:\\Users\\whereman.NATH\\data\\maxima-5.44.0\\gungor\\p5diffusion-run1-Jan25-2021-wh.out"); */
+/* I am given the full path where p5diffusion-run1-Jan25-2021-wh.out should be saved. */
+/* writefile is commented out because it is not a standard text file but a lisp file */
+
+batch("c:\\Users\\whereman.NATH\\data\\maxima-5.44.0\\gungor\\p5diffusion-run1-Jan25-2021-wh.dat")$
+/* Again, the full path where p5diffusion-run1-Jan25-2021-wh.dat is placed. */
+
+symmetry(1,0,0);
+printeqn(lode);
+
+expand(eta1);
+expand(eta2);
+expand(eta3);
+expand(phi1);
+
+save ("c:\\Users\\whereman.NATH\\data\\maxima-5.44.0\\gungor\\p5diffusion-lode-run1-Jan25-2021-wh.lsp", lode);
+/* Again, the full path where p5diffusion-lode-run1-Jan25-2021-wh.lsp will be saved. */
+
+/* closefile(); */
+
+/* end of file p5diffusion-run1-Jan25-2021-wh.mac. */

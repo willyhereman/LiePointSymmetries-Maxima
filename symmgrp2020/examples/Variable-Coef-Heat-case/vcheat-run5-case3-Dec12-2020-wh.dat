@@ -1,0 +1,56 @@
+/* Last updated: December 12, 2020 by Hereman in Boulder */
+/* For use with symmgrp2020.max under Maxima */
+
+/* File name: vcheat-run5-case3-Dec12-2020-wh.dat. */
+/* Data file for a heat equation with a variable coefficient given in the online manuscript Faruk Gungor. */
+
+/* Case 3: bb = 3/2 and g =!= 0  */ 
+
+/* u_t - x u_xx- bb u_x = 0 */
+/* Assign u[1] to u, x[1] to x, x[2] to t, bb is a constant. */
+
+/* number of independent variables: */
+p : 2$
+
+/* number of dependent variables: */
+q : 1$
+
+/* number of equations in the system: */
+m : 1$
+
+warnings: false$
+parameters : [bb] $
+sublisteqs : [all]$
+subst_deriv_of_vi: true$
+highest_derivatives : all$
+
+/* no information is given yet -- this will be updated in next runs. */
+info_given : true$
+
+depends([eta1,f1,f2],[x[1],x[2]]);
+depends([eta2,g,g1],x[2]);
+
+/* Case 3: If b = 3/2 and g =!= zero */
+
+bb : 3/2;
+
+g : c4*x[2]+c5;
+
+g1 : -bb*c1*x[2]+c6;
+
+eta2 : c1*x[2]^2 + c2*x[2] + c3;
+
+eta1 : g*sqrt(x[1])+x[1]*diff(eta2,x[2]);
+
+f1 : -sqrt(x[1])*diff(g,x[2])+((1-2*bb)/(4*sqrt(x[1])))*g-(1/2)*x[1]*diff(eta2,x[2],2)+g1;
+
+gradef(f2,x[2],x[1]*diff(f2,x[1],2)+bb*diff(f2,x[1]));
+
+phi1 : f1*u[1]+f2;
+
+e1 : u[1,[0,1]]-x[1]*u[1,[2,0]]-bb*u[1,[1,0]];
+/* bb is just a constant positive parameter */
+v1 : u[1,[2,0]];
+
+/* end of data file vcheat-run5-case3-Dec12-2020-wh.dat. */
+
